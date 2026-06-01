@@ -70,9 +70,9 @@ var principalType = 'User'
 
 param logAnalyticsName string = ''
 param applicationInsightsName string = ''
-param completionDeploymentModelName string = 'gpt-4o-realtime-preview'
-param completionModelName string = 'gpt-4o-realtime-preview'
-param completionModelVersion string = '2024-12-17'
+param completionDeploymentModelName string = 'gpt-realtime'
+param completionModelName string = 'gpt-realtime'
+param completionModelVersion string = '2025-08-28'
 param openaiApiVersion string = '2024-10-01-preview'
 param embeddingDeploymentCapacity int
 param embedModel string = 'text-embedding-3-large'
