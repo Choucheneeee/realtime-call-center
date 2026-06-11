@@ -116,12 +116,12 @@ async def create_app():
 
     async def call(request):
         body = await request.json()
-        if (caller is not None):
-            await caller.initiate_call(body['number'])
-            return web.Response(text="Created outbound call")
-        else:
-            return web.Response(text="Outbound calling is not configured")
-
+	
+        phone_number = body.get('phoneNumber') or body.get('number')
+    	if not phone_number:
+        	return web.json_response({"error": "Missing phoneNumber"}, status=400)
+    	await caller.initiate_call(phone_number)
+    	return web.json_response({"message": "Call initiated"})
     async def get_source_phone_number(request):
         phone_number = os.environ.get("ACS_SOURCE_NUMBER")
         return web.json_response({"phoneNumber": phone_number})

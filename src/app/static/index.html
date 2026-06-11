@@ -1,89 +1,560 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Azure Call Center Agent</title>
-    <!-- Include Pico.css -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css" />
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="/static/style.css" />
-    <!-- Import Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Use a modern sans-serif font -->
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
-  </head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wic Doctor — Sage AI Agent</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --teal:#10B8AA;
+      --navy:#053177;
+      --teal-light:rgba(16,184,170,0.08);
+      --teal-mid:rgba(16,184,170,0.18);
+      --navy-light:rgba(5,49,119,0.06);
+    }
+    html{scroll-behavior:smooth}
+    body{
+      font-family:'Inter',sans-serif;background:#fff;color:#1a2640;
+      min-height:100vh;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;padding:100px 24px 80px;
+    }
 
-  <body>
-    <div class="flex-container">
-      <div class="titles-container">
-        <!-- Title -->
-        <h1>Azure Call Center Agent</h1>
-        <h2>Talk to your agent</h2>
+    /* ─── NAV ─── */
+    nav{
+      position:fixed;top:0;left:0;right:0;
+      display:flex;justify-content:space-between;align-items:center;
+      padding:0 48px;height:68px;
+      border-bottom:1px solid rgba(0,0,0,0.06);
+      background:rgba(255,255,255,0.97);
+      backdrop-filter:blur(14px);z-index:100;
+    }
+    .nav-left{display:flex;align-items:center;gap:12px}
+    .nav-logo{height:36px;width:auto;display:block;object-fit:contain}
+    .nav-wordmark{font-weight:700;font-size:1.2rem;color:var(--navy)}
+    .nav-wordmark span{color:var(--teal)}
+    .nav-right{display:flex;align-items:center;gap:16px}
+    .nav-badge{
+      background:var(--teal-light);color:var(--teal);padding:5px 14px;
+      border-radius:99px;font-size:0.72rem;font-weight:600;
+      border:1px solid rgba(16,184,170,0.22);letter-spacing:0.02em;
+    }
+    .nav-dot{
+      width:8px;height:8px;background:#22c55e;border-radius:50%;
+      box-shadow:0 0 0 2px rgba(34,197,94,0.25);
+      animation:live-pulse 2s ease-in-out infinite;
+    }
+    @keyframes live-pulse{0%,100%{box-shadow:0 0 0 2px rgba(34,197,94,0.25)}50%{box-shadow:0 0 0 5px rgba(34,197,94,0.1)}}
+
+    /* ─── CENTER ─── */
+    .center{
+      display:flex;flex-direction:column;align-items:center;
+      text-align:center;width:100%;max-width:860px;
+    }
+
+    /* ─── ORB ─── */
+    .orb-wrap{
+      position:relative;width:156px;height:156px;
+      display:flex;align-items:center;justify-content:center;margin-bottom:44px;
+    }
+    .orb-ring{
+      position:absolute;border-radius:50%;
+      border:1px solid rgba(16,184,170,0.22);
+      animation:ring-expand 3.2s ease-in-out infinite;
+    }
+    .orb-ring:nth-child(1){width:156px;height:156px;animation-delay:0s}
+    .orb-ring:nth-child(2){width:118px;height:118px;animation-delay:0.5s}
+    .orb-ring:nth-child(3){width:84px;height:84px;animation-delay:1s}
+    @keyframes ring-expand{0%,100%{opacity:0.25;transform:scale(1)}50%{opacity:0.6;transform:scale(1.06)}}
+    .orb-core{
+      width:66px;height:66px;
+      background:linear-gradient(135deg,var(--teal) 0%,#0b9e92 100%);
+      border-radius:50%;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;position:relative;z-index:2;
+      box-shadow:0 0 0 8px rgba(16,184,170,0.1),0 8px 32px rgba(16,184,170,0.3);
+    }
+    .orb-emoji{font-size:22px;line-height:1}
+    .orb-wave{display:flex;align-items:flex-end;gap:2px;height:11px;margin-top:3px}
+    .wave-bar{width:2px;background:rgba(255,255,255,0.8);border-radius:99px;animation:wave 0.9s ease-in-out infinite}
+    .wave-bar:nth-child(1){height:4px;animation-delay:0s}
+    .wave-bar:nth-child(2){height:8px;animation-delay:0.1s}
+    .wave-bar:nth-child(3){height:11px;animation-delay:0.2s}
+    .wave-bar:nth-child(4){height:8px;animation-delay:0.3s}
+    .wave-bar:nth-child(5){height:4px;animation-delay:0.4s}
+    @keyframes wave{0%,100%{transform:scaleY(0.5)}50%{transform:scaleY(1)}}
+
+    /* ─── TYPOGRAPHY ─── */
+    .eyebrow{
+      display:inline-flex;align-items:center;gap:7px;
+      font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
+      color:var(--teal);margin-bottom:20px;
+    }
+    .eyebrow-line{width:24px;height:1px;background:var(--teal);opacity:0.5}
+    h1{
+      font-size:clamp(2rem,4vw,3rem);font-weight:700;
+      line-height:1.18;color:var(--navy);margin-bottom:18px;
+    }
+    h1 em{font-style:normal;color:var(--teal)}
+    .sub{
+      font-size:1rem;color:#5e6e86;line-height:1.75;
+      max-width:520px;margin:0 auto 52px;
+    }
+
+    /* ─── LANG CHIPS ─── */
+    .langs{
+      display:flex;flex-wrap:wrap;justify-content:center;
+      gap:8px;margin-bottom:52px;
+    }
+    .lang-chip{
+      background:#fff;border:1px solid #dde6f3;border-radius:99px;
+      padding:6px 16px;font-size:0.78rem;font-weight:500;color:#4a5a74;
+      transition:all 0.2s;
+    }
+    .lang-chip:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-light)}
+
+    /* ─── CARDS ─── */
+    .cards{
+      display:grid;grid-template-columns:1fr 1fr;
+      gap:20px;width:100%;max-width:780px;
+    }
+    .call-card{
+      background:#fff;border:1px solid #e4ecf7;border-radius:22px;
+      padding:28px 26px 24px;
+      box-shadow:0 4px 24px -6px rgba(5,49,119,0.06);
+      transition:box-shadow 0.25s,transform 0.25s;
+      position:relative;overflow:hidden;
+    }
+    .call-card::after{
+      content:'';position:absolute;bottom:-48px;right:-48px;
+      width:110px;height:110px;border-radius:50%;
+      background:radial-gradient(circle,rgba(16,184,170,0.07) 0%,transparent 70%);
+      pointer-events:none;
+    }
+    .call-card:hover{
+      box-shadow:0 12px 36px -8px rgba(5,49,119,0.1);
+      transform:translateY(-2px);
+    }
+
+    /* card header */
+    .card-head{
+      display:flex;align-items:center;gap:10px;margin-bottom:20px;
+    }
+    .card-icon{
+      width:36px;height:36px;border-radius:10px;
+      background:var(--teal);display:flex;align-items:center;
+      justify-content:center;font-size:15px;flex-shrink:0;
+    }
+    .card-head-text h3{font-size:0.92rem;font-weight:600;color:var(--navy);margin-bottom:2px}
+    .card-head-text span{font-size:0.68rem;color:#9aabb8;font-weight:500;letter-spacing:0.02em}
+
+    /* status dot on card */
+    .card-status-dot{
+      width:7px;height:7px;background:#22c55e;border-radius:50%;
+      margin-left:auto;flex-shrink:0;
+      box-shadow:0 0 0 3px rgba(34,197,94,0.15);
+      animation:live-pulse 2s ease-in-out infinite;
+    }
+
+    /* ─── BROWSER BUTTON ─── */
+    .btn-mic-wrap{position:relative;display:flex;align-items:center;justify-content:center;width:100%}
+    .sonar-ring{
+      position:absolute;width:100%;height:52px;border-radius:14px;
+      border:1.5px solid rgba(16,184,170,0.3);
+      animation:sonar 2.6s ease-out infinite;pointer-events:none;
+    }
+    .sonar-ring:nth-child(2){animation-delay:0.87s}
+    .sonar-ring:nth-child(3){animation-delay:1.74s}
+    @keyframes sonar{0%{transform:scale(1);opacity:0.55}100%{transform:scale(1.4);opacity:0}}
+
+    #toggleButton{
+      position:relative;z-index:2;width:100%;height:52px;
+      border-radius:14px;font-size:0.9rem;font-weight:600;cursor:pointer;
+      border:none;font-family:'Inter',sans-serif;
+      background:var(--teal);color:#fff;
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;transition:transform 0.18s,box-shadow 0.18s;
+      margin-bottom:0;
+    }
+    #toggleButton:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(16,184,170,0.36)}
+    #toggleButton:active{transform:scale(0.97)}
+    #toggleButton::before{
+      content:'';position:absolute;top:0;left:-100%;width:55%;height:100%;
+      background:linear-gradient(120deg,transparent,rgba(255,255,255,0.16),transparent);
+      animation:shimmer 3s ease-in-out infinite;
+    }
+    @keyframes shimmer{0%{left:-100%}65%,100%{left:160%}}
+    .btn-inner{display:flex;align-items:center;gap:11px;position:relative;z-index:1}
+    .mic-circle{
+      width:30px;height:30px;border-radius:50%;
+      background:rgba(255,255,255,0.16);
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;
+    }
+    .btn-bars{display:flex;align-items:center;gap:2px;height:16px}
+    .btn-bar{
+      width:2px;border-radius:99px;background:rgba(255,255,255,0.65);
+      animation:btn-wave 0.75s ease-in-out infinite;
+    }
+    .btn-bar:nth-child(1){height:5px;animation-delay:0s}
+    .btn-bar:nth-child(2){height:12px;animation-delay:0.1s}
+    .btn-bar:nth-child(3){height:16px;animation-delay:0.18s}
+    .btn-bar:nth-child(4){height:12px;animation-delay:0.26s}
+    .btn-bar:nth-child(5){height:7px;animation-delay:0.34s}
+    .btn-bar:nth-child(6){height:12px;animation-delay:0.42s}
+    .btn-bar:nth-child(7){height:5px;animation-delay:0.5s}
+    @keyframes btn-wave{0%,100%{transform:scaleY(0.4);opacity:0.55}50%{transform:scaleY(1);opacity:1}}
+    .btn-label{font-size:0.9rem;font-weight:600}
+
+    /* ─── PHONE CARD ─── */
+    .phone-number-block{
+      display:flex;align-items:center;justify-content:space-between;
+      background:#f6f9fd;border:1px solid #e4ecf7;border-radius:13px;
+      padding:12px 16px;margin-bottom:14px;cursor:pointer;transition:all 0.2s;
+    }
+    .phone-number-block:hover{border-color:rgba(16,184,170,0.45);background:var(--teal-light)}
+    .phone-left{display:flex;align-items:center;gap:10px}
+    .phone-icon-wrap{
+      width:34px;height:34px;background:var(--navy);border-radius:9px;
+      display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+    }
+    .phone-info-label{
+      font-size:0.63rem;color:#9aabb8;font-weight:600;
+      text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;
+    }
+    .phone-number{font-size:0.95rem;font-weight:700;color:var(--navy);letter-spacing:0.02em}
+    .copy-badge{
+      font-size:0.65rem;font-weight:600;color:var(--teal);
+      background:var(--teal-light);border:1px solid rgba(16,184,170,0.22);
+      padding:3px 10px;border-radius:99px;transition:all 0.2s;white-space:nowrap;
+    }
+    .phone-number-block:hover .copy-badge{background:var(--teal);color:#fff;border-color:var(--teal)}
+
+    .divider-or{
+      display:flex;align-items:center;gap:10px;margin:10px 0 14px;
+    }
+    .div-line{flex:1;height:1px;background:#edf1f7}
+    .div-or{font-size:0.68rem;color:#b8c4d0;font-weight:500}
+
+    .input-row{display:flex;gap:8px;align-items:stretch}
+    .phone-input{
+      flex:1;padding:11px 14px;border-radius:11px;
+      border:1px solid #dde6f3;font-size:0.85rem;outline:none;
+      transition:border 0.2s,box-shadow 0.2s;font-family:'Inter',sans-serif;
+      color:#1a2640;background:#fff;
+    }
+    .phone-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(16,184,170,0.1)}
+    .phone-input::placeholder{color:#b8c4d0}
+    #callButton{
+      flex-shrink:0;width:auto;padding:11px 16px;border-radius:11px;
+      font-size:0.82rem;font-weight:600;cursor:pointer;border:none;
+      font-family:'Inter',sans-serif;background:var(--navy);color:#fff;
+      display:flex;align-items:center;gap:5px;transition:all 0.2s;
+      white-space:nowrap;margin-bottom:0;
+    }
+    #callButton:hover{background:#042868;transform:translateY(-1px);box-shadow:0 6px 16px rgba(5,49,119,0.22)}
+
+    /* ─── STATUS & PRE ─── */
+    .status{font-size:0.75rem;color:var(--teal);margin-top:12px;min-height:18px;line-height:1.5;text-align:center}
+    pre{
+      background:#f6f9fd;padding:9px 12px;border-radius:9px;
+      font-size:0.65rem;overflow-x:auto;margin-top:8px;
+      border-left:2px solid var(--teal);color:#5e6e86;text-align:left;
+    }
+
+    /* ─── TRUST BAR ─── */
+    .trust-bar{
+      display:flex;align-items:center;justify-content:center;gap:28px;
+      margin-top:44px;flex-wrap:wrap;
+    }
+    .trust-item{
+      display:flex;align-items:center;gap:6px;
+      font-size:0.72rem;color:#8898aa;font-weight:500;
+    }
+    .trust-icon{font-size:13px}
+    .trust-sep{width:1px;height:16px;background:#dde6f3}
+
+    /* ─── SIDEBAR ─── */
+    .sidebar{
+      position:fixed;top:76px;right:24px;width:282px;background:#fff;
+      border-radius:18px;box-shadow:0 16px 40px -10px rgba(5,49,119,0.13);
+      border:1px solid #e4ecf7;padding:22px;display:none;z-index:200;
+      animation:slide-in 0.2s ease;
+    }
+    @keyframes slide-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    .sidebar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .sidebar h4{font-size:0.9rem;font-weight:600;color:var(--navy)}
+    .sidebar-close{
+      width:24px;height:24px;border-radius:6px;border:none;background:none;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      font-size:14px;color:#8898aa;transition:background 0.15s;
+    }
+    .sidebar-close:hover{background:#f0f4fa}
+    .sidebar label{font-size:0.75rem;color:#6b7a94;display:block;margin-bottom:10px}
+    .sidebar select{
+      width:100%;padding:10px 13px;border-radius:10px;border:1px solid #dde6f3;
+      background:#fff;font-size:0.83rem;color:#1a2640;
+      outline:none;font-family:'Inter',sans-serif;cursor:pointer;
+    }
+    .sidebar select:focus{border-color:var(--teal)}
+
+    #configButton{
+      position:fixed;bottom:24px;right:24px;background:#fff;color:var(--navy);
+      border:1px solid #dde6f3;padding:9px 18px;border-radius:99px;
+      font-weight:600;font-size:0.78rem;cursor:pointer;z-index:201;
+      box-shadow:0 4px 14px rgba(5,49,119,0.07);transition:all 0.2s;
+      font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;width:auto;
+    }
+    #configButton:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-light)}
+
+    /* ─── FOOTER ─── */
+    footer{
+      margin-top:56px;padding-top:28px;
+      border-top:1px solid #edf1f7;
+      width:100%;max-width:780px;
+      display:flex;align-items:center;justify-content:space-between;
+      flex-wrap:wrap;gap:12px;
+    }
+    .footer-logo{display:flex;align-items:center;gap:8px}
+    .footer-logo img{height:22px;width:auto;opacity:0.65}
+    .footer-logo span{font-size:0.75rem;color:#94a3b8;font-weight:500}
+    .footer-right{font-size:0.68rem;color:#b8c4d0}
+
+    /* ─── TOAST ─── */
+    .toast{
+      position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(10px);
+      background:var(--navy);color:#fff;padding:9px 20px;border-radius:99px;
+      font-size:0.78rem;font-weight:500;opacity:0;transition:all 0.3s;
+      pointer-events:none;white-space:nowrap;z-index:300;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    /* ─── RESPONSIVE ─── */
+    @media(max-width:640px){
+      nav{padding:0 20px}
+      .nav-logo{height:28px}
+      h1{font-size:1.85rem}
+      .cards{grid-template-columns:1fr}
+      .input-row{flex-direction:column}
+      #callButton{width:100%;justify-content:center}
+      footer{flex-direction:column;align-items:center;text-align:center}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAVBAR ─── -->
+<nav>
+  <div class="nav-left">
+    <img src="/static/logo-wic-new.png" alt="Wic Doctor" class="nav-logo"
+         onerror="this.style.display='none';document.getElementById('nav-fallback').style.display='block'">
+    <div class="nav-wordmark" id="nav-fallback" style="display:none"><span>Wic</span> Doctor</div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-dot"></div>
+    <div class="nav-badge">AI Healthcare Concierge</div>
+  </div>
+</nav>
+
+<!-- ─── MAIN ─── -->
+<div class="center">
+
+  <!-- Orb -->
+  <div class="orb-wrap">
+    <div class="orb-ring"></div>
+    <div class="orb-ring"></div>
+    <div class="orb-ring"></div>
+    <div class="orb-core">
+      <span class="orb-emoji">🩺</span>
+      <div class="orb-wave">
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
       </div>
     </div>
+  </div>
 
-    <div class="sidebar" id="sidebar">
-      <h2>Configuration</h2>
-      <div class="dropdown-container">
-        <label for="themeSelect">Choose a voice before launching the conversation:</label>
-        <select id="themeSelect" name="themeSelect">
-          <option value="alloy">Alloy</option>
-          <option value="ash">Ash</option>
-          <option value="ballad">Ballad</option>
-          <option value="coral">Coral</option>
-          <option value="echo">Echo</option>
-          <option value="sage">Sage</option>
-        </select>
+  <!-- Heading -->
+  <div class="eyebrow">
+    <span class="eyebrow-line"></span>
+    Intelligent Voice Assistant
+    <span class="eyebrow-line"></span>
+  </div>
+  <h1>Meet <em>Sage</em>, your AI<br>healthcare agent</h1>
+  <p class="sub">Intelligent voice-first assistance — 24/7 patient support, natural conversations, and seamless handoffs across 5 languages.</p>
+
+  <!-- Language chips -->
+  <div class="langs">
+    <span class="lang-chip">🇸🇦 العربية</span>
+    <span class="lang-chip">🇬🇧 English</span>
+    <span class="lang-chip">🇫🇷 Français</span>
+    <span class="lang-chip">🇮🇹 Italiano</span>
+    <span class="lang-chip">🇩🇪 Deutsch</span>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards">
+
+    <!-- Card 1 — Browser -->
+    <div class="call-card">
+      <div class="card-head">
+        <div class="card-icon">🎙️</div>
+        <div class="card-head-text">
+          <h3>Browser Call</h3>
+          <span>WebRTC · No app needed</span>
+        </div>
+        <div class="card-status-dot"></div>
       </div>
-    </div>
-    <button id="configButton">Config</button>
-    <!-- Main Container -->
-    <div class="main-container">
-      <main class="container">
-        <article id="1" class="side-by-side">
-          <h3>In your browser</h3>
-          <button id="toggleButton" class="black-button">Start Conversation</button>
-          <div id="statusMessage"></div>
-          <pre id="report"></pre>
-        </article>
-        <div class="separator"></div>
-        <article id="2" class="side-by-side">
-          <h3>On your phone</h3>
-          <form onsubmit="event.preventDefault();">
-            <input type="text" id="phonenumber" placeholder="Your phone number e.g. +49123456789" />
-            <button id="callButton" class="black-button">Receive a call from us</button>
-            <p>or</p>
-            <button id="incomingCallButton" class="black-button">
-              Call us directly
-              <span id="sourcePhoneNumber"></span>
-            </button>
-          </form>
-          <div id="statusMessage"></div>
-          <pre id="report"></pre>
-        </article>
-      </main>
+      <div class="btn-mic-wrap">
+        <div class="sonar-ring"></div>
+        <div class="sonar-ring"></div>
+        <div class="sonar-ring"></div>
+        <button id="toggleButton">
+          <div class="btn-inner">
+            <div class="mic-circle">🎙️</div>
+            <span class="btn-label">Start Conversation</span>
+            <div class="btn-bars">
+              <div class="btn-bar"></div>
+              <div class="btn-bar"></div>
+              <div class="btn-bar"></div>
+              <div class="btn-bar"></div>
+              <div class="btn-bar"></div>
+              <div class="btn-bar"></div>
+              <div class="btn-bar"></div>
+            </div>
+          </div>
+        </button>
+      </div>
+      <div id="statusMessage" class="status"></div>
+      <pre id="report"></pre>
     </div>
 
-    <script src="/static/app.js"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        const themeSelect = document.getElementById('themeSelect');
+    <!-- Card 2 — Phone -->
+    <div class="call-card">
+      <div class="card-head">
+        <div class="card-icon" style="background:var(--navy)">📞</div>
+        <div class="card-head-text">
+          <h3>Phone Call</h3>
+          <span>Outbound or inbound</span>
+        </div>
+      </div>
 
-        themeSelect.addEventListener('change', function () {
-          const selectedVoice = themeSelect.value;
-          updateVoiceOnServer(selectedVoice);
-        });
+      <!-- Sage's direct number -->
+      <div class="phone-number-block" id="copyNumberBtn" title="Tap to copy number">
+        <div class="phone-left">
+          <div class="phone-icon-wrap">📡</div>
+          <div>
+            <div class="phone-info-label">Call Sage directly</div>
+            <div class="phone-number" id="sourcePhoneNumber">+1 (800) SAGE-AI</div>
+          </div>
+        </div>
+        <span class="copy-badge" id="copyLabel">Copy</span>
+      </div>
 
-        const configButton = document.getElementById('configButton');
-        const sidebar = document.getElementById('sidebar');
+      <div class="divider-or">
+        <div class="div-line"></div>
+        <span class="div-or">or receive a call</span>
+        <div class="div-line"></div>
+      </div>
 
-        configButton.addEventListener('click', () => {
-          const isVisible = sidebar.style.display === 'none' || sidebar.style.display === '';
-          sidebar.style.display = isVisible ? 'block' : 'none';
-          document.body.classList.toggle('sidebar-visible', isVisible);
-        });
+      <div class="input-row">
+        <input class="phone-input" type="tel" id="phonenumber" placeholder="+49 123 456 789" />
+        <button id="callButton">📲 Call me</button>
+      </div>
+
+      <div id="statusMessagePhone" class="status"></div>
+      <pre id="reportPhone"></pre>
+    </div>
+
+  </div>
+
+  <!-- Trust bar -->
+  <div class="trust-bar">
+    <div class="trust-item"><span class="trust-icon">🔒</span> Clinical-grade privacy</div>
+    <div class="trust-sep"></div>
+    <div class="trust-item"><span class="trust-icon">⚡</span> Azure Realtime API</div>
+    <div class="trust-sep"></div>
+    <div class="trust-item"><span class="trust-icon">🌐</span> 5 languages supported</div>
+    <div class="trust-sep"></div>
+    <div class="trust-item"><span class="trust-icon">🕐</span> Available 24/7</div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-logo">
+      <img src="/static/logo-wic-new.png" alt="Wic Doctor"
+           onerror="this.style.display='none'">
+      <span>Wic Doctor · Sage AI Agent</span>
+    </div>
+    <div class="footer-right">Powered by Azure OpenAI Realtime API</div>
+  </footer>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">Number copied to clipboard ✓</div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <h4>⚙ Voice Settings</h4>
+    <button class="sidebar-close" id="sidebarClose">✕</button>
+  </div>
+  <label for="themeSelect">Choose Sage's voice before starting</label>
+  <select id="themeSelect">
+    <option value="alloy">Alloy — Warm &amp; Clear</option>
+    <option value="ash">Ash — Confident &amp; Calm</option>
+    <option value="ballad">Ballad — Soft &amp; Reassuring</option>
+    <option value="coral">Coral — Bright &amp; Empathetic</option>
+    <option value="echo">Echo — Professional &amp; Neutral</option>
+    <option value="sage">Sage — Wise &amp; Gentle</option>
+  </select>
+</div>
+<button id="configButton">⚙ Preferences</button>
+
+<script src="/static/app.js"></script>
+<script>
+(function(){
+  /* Sidebar */
+  const configBtn = document.getElementById('configButton');
+  const sidebar   = document.getElementById('sidebar');
+  const closeBtn  = document.getElementById('sidebarClose');
+  const openSB  = function(e){ e.stopPropagation(); sidebar.style.display = 'block'; };
+  const closeSB = function(){ sidebar.style.display = 'none'; };
+  if(configBtn) configBtn.addEventListener('click', openSB);
+  if(closeBtn)  closeBtn.addEventListener('click', function(e){ e.stopPropagation(); closeSB(); });
+  document.addEventListener('click', closeSB);
+  if(sidebar) sidebar.addEventListener('click', function(e){ e.stopPropagation(); });
+
+  /* Voice */
+  const themeSelect = document.getElementById('themeSelect');
+  if(themeSelect && typeof updateVoiceOnServer === 'function'){
+    themeSelect.addEventListener('change', function(){ updateVoiceOnServer(themeSelect.value); });
+  }
+
+  /* Populate Sage's number if app.js sets window.sourcePhoneNumber */
+  const sourceSpan = document.getElementById('sourcePhoneNumber');
+  if(sourceSpan && typeof window.sourcePhoneNumber !== 'undefined' && window.sourcePhoneNumber){
+    sourceSpan.textContent = window.sourcePhoneNumber;
+  }
+
+  /* Copy number */
+  const copyBtn   = document.getElementById('copyNumberBtn');
+  const copyLabel = document.getElementById('copyLabel');
+  const toast     = document.getElementById('toast');
+  if(copyBtn){
+    copyBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var num = document.getElementById('sourcePhoneNumber').textContent.trim();
+      navigator.clipboard.writeText(num).then(function(){
+        copyLabel.textContent = 'Copied ✓';
+        toast.classList.add('show');
+        setTimeout(function(){ copyLabel.textContent = 'Copy'; toast.classList.remove('show'); }, 2200);
       });
-    </script>
-  </body>
+    });
+  }
+})();
+</script>
+</body>
 </html>

@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Wic Doctor — Sage AI Agent | Healthcare Voice AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+    
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      /* ===== LIGHT, HEALTHCARE-FIRST COLOR SYSTEM ===== */
+      :root {
+        --bg: #F8FAFE;
+        --surface: #FFFFFF;
+        --surface2: #F1F5F9;
+        --border: #E2E8F0;
+        --accent: #1E7F6E;      /* deep teal — medical trust */
+        --accent2: #3B9F8F;     /* softer sage-teal */
+        --accent3: #6C9E9A;     /* muted accent for variation */
+        --text: #1E2A3E;
+        --text-muted: #4A5B6E;
+        --glow: rgba(30,127,110,0.08);
+        --glow2: rgba(59,159,143,0.05);
+        --radius: 24px;
+        --radius-sm: 14px;
+        --shadow-sm: 0 10px 25px -5px rgba(0, 0, 0, 0.03), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+        --shadow-md: 0 20px 30px -12px rgba(0, 0, 0, 0.08);
+        --shadow-hover: 0 30px 40px -16px rgba(30,127,110,0.12);
+      }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 400;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Subtle light texture – no dark mesh */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at 20% 30%, rgba(30,127,110,0.02) 0%, transparent 60%),
+                    radial-gradient(circle at 85% 70%, rgba(59,159,143,0.02) 0%, transparent 60%);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* Refined minimal grid (barely visible) */
+      body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: 
+          linear-gradient(var(--border) 0.5px, transparent 0.5px),
+          linear-gradient(90deg, var(--border) 0.5px, transparent 0.5px);
+        background-size: 48px 48px;
+        opacity: 0.3;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* ===== NAVIGATION – PURE & ELEGANT ===== */
+      nav {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 48px;
+        backdrop-filter: blur(12px);
+        background: rgba(255,255,255,0.88);
+        border-bottom: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        animation: slideDown 0.6s ease both;
+      }
+
+      .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 1.2rem;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      .nav-brand .dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 6px var(--accent2);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .nav-badge {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--accent);
+        background: rgba(30,127,110,0.08);
+        border: 1px solid rgba(30,127,110,0.2);
+        padding: 5px 14px;
+        border-radius: 99px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      /* CONFIG BUTTON – REFINED */
+      #configButton {
+        position: fixed;
+        top: 16px;
+        right: 48px;
+        z-index: 200;
+        background: white;
+        border: 1px solid var(--border);
+        color: var(--accent);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 7px 20px;
+        border-radius: 99px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(8px);
+        box-shadow: var(--shadow-sm);
+        animation: slideDown 0.6s 0.2s ease both;
+      }
+      #configButton:hover {
+        background: var(--surface);
+        border-color: var(--accent);
+        color: var(--accent);
+        box-shadow: 0 4px 14px rgba(30,127,110,0.12);
+        transform: translateY(-1px);
+      }
+
+      /* SIDEBAR – CLEAN WHITE CARD */
+      .sidebar {
+        position: fixed;
+        top: 76px;
+        right: 24px;
+        width: 320px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 28px;
+        z-index: 150;
+        display: none;
+        box-shadow: var(--shadow-md);
+        animation: fadeInRight 0.3s ease both;
+      }
+
+      .sidebar h2 {
+        font-family: 'Syne', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+      }
+
+      .sidebar label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text);
+        margin-bottom: 12px;
+      }
+
+      .sidebar select {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.9rem;
+        padding: 12px 14px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234A5B6E' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+      }
+      .sidebar select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(30,127,110,0.1); }
+
+      /* HERO – LIGHT & INVITING */
+      .hero {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 140px 24px 80px;
+        gap: 20px;
+      }
+
+      .hero-eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+        opacity: 0;
+        animation: fadeUp 0.6s 0.2s ease both;
+      }
+      .hero-eyebrow::before, .hero-eyebrow::after {
+        content: '';
+        display: block;
+        width: 36px;
+        height: 1px;
+        background: var(--accent2);
+        opacity: 0.5;
+      }
+
+      .hero h1 {
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: clamp(2.8rem, 7vw, 5.2rem);
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        opacity: 0;
+        animation: fadeUp 0.7s 0.35s ease both;
+      }
+
+      .hero h1 .gradient-word {
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 60%, #58B4A4 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .hero-sub {
+        max-width: 560px;
+        font-size: 1.08rem;
+        line-height: 1.65;
+        color: var(--text-muted);
+        font-weight: 400;
+        opacity: 0;
+        animation: fadeUp 0.7s 0.5s ease both;
+      }
+
+      .hero-langs {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 12px;
+        opacity: 0;
+        animation: fadeUp 0.7s 0.65s ease both;
+      }
+
+      .lang-chip {
+        font-size: 0.78rem;
+        font-weight: 500;
+        padding: 6px 18px;
+        border-radius: 99px;
+        border: 1px solid var(--border);
+        background: white;
+        color: var(--text-muted);
+        transition: all 0.2s;
+      }
+      .lang-chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(30,127,110,0.04);
+        transform: translateY(-1px);
+      }
+
+      .hero-scroll {
+        position: absolute;
+        bottom: 32px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        opacity: 0;
+        animation: fadeIn 1s 1.2s ease both;
+      }
+      .hero-scroll .arrow {
+        width: 20px; height: 28px;
+        border: 1.5px solid var(--border);
+        border-radius: 99px;
+        position: relative;
+        overflow: hidden;
+        background: white;
+      }
+      .hero-scroll .arrow::after {
+        content: '';
+        position: absolute;
+        top: 6px; left: 50%;
+        transform: translateX(-50%);
+        width: 4px; height: 4px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: scrollDot 1.8s ease-in-out infinite;
+      }
+
+      /* SECTIONS – HEALTHCARE SIMPLICITY */
+      .section {
+        position: relative;
+        z-index: 1;
+        padding: 80px 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .section-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--accent2);
+        margin-bottom: 20px;
+      }
+
+      .section-title {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(1.8rem, 4vw, 2.8rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        margin-bottom: 24px;
+        color: var(--text);
+      }
+
+      .section-body {
+        font-size: 1rem;
+        line-height: 1.75;
+        color: var(--text-muted);
+        font-weight: 400;
+        max-width: 680px;
+      }
+
+      /* FEATURE GRID – WHITE CARDS */
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 24px;
+        margin-top: 56px;
+      }
+
+      .feature-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 32px 28px;
+        position: relative;
+        transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+        box-shadow: var(--shadow-sm);
+      }
+      .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        opacity: 0;
+        transition: opacity 0.3s;
+        border-radius: var(--radius) var(--radius) 0 0;
+      }
+      .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-hover);
+        border-color: rgba(30,127,110,0.2);
+      }
+      .feature-card:hover::before { opacity: 1; }
+
+      .feature-icon {
+        font-size: 2rem;
+        margin-bottom: 20px;
+        display: block;
+        color: var(--accent);
+      }
+
+      .feature-card h4 {
+        font-family: 'Syne', sans-serif;
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 12px;
+        color: var(--text);
+      }
+
+      .feature-card p {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+      }
+
+      .divider {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--border), transparent);
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* MAIN CONTAINER – SIDE BY SIDE CARDS */
+      .main-container {
+        position: relative;
+        z-index: 1;
+        padding: 40px 24px 90px;
+      }
+
+      .main-container > main {
+        max-width: 960px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+      }
+
+      @media (max-width: 700px) {
+        .main-container > main { grid-template-columns: 1fr; }
+        nav { padding: 16px 24px; }
+        #configButton { right: 24px; top:configButton { right: 24 14px;px; top: 14px; }
+      }
+      }
+
+      .section }
+
+      .section-c-cards-header {
+       ards-header {
+        text-align: center text-align: center;
+;
+        margin-bottom: 48        margin-bottom: 48px;
+        positionpx;
+        position: relative;
+       : relative;
+        z z-index: 1;
+     -index: 1;
+      }
+
+      .section-cards-header .section }
+
+      .section-cards-header .section-label { justify-content: center;-label { justify-content: center; display: flex; display: flex; }
+
+      article.side }
+
+      article.s-by-side {
+        background: varide-by-side {
+        background: var(--surface);
+       (--surface);
+        border: 1px solid border: 1px var(--border);
+        border solid var(--border);
+        border-radius: var(---radius: var(--radius);
+        paddingradius);
+        padding: 42px 36: 42px 36px;
+        positionpx;
+        position: relative;
+       : relative;
+        transition: all  transition: all 0.3s ease;
+        box0.3s ease;
+        box-shadow: var(--shadow-shadow: var(---sm);
+      }
+      article.sshadow-sm);
+      }
+      articleide-by-side:hover.side-by-side:hover {
+        box-shadow: var {
+        box(---shadow: var(--shadow-md);
+        border-color: rgba(shadow-md);
+        border-color: rgba(30,127,11030,127,110,0.2);
+,0.2);
+               transform: translateY transform: translateY(-3(-3px);
+     px);
+      }
+
+      article h3 }
+
+      article h3 {
+        font-family {
+        font-family: 'Syne: 'Syne', sans-serif;
+        font-weight:', sans-serif;
+        font-weight: 700;
+        font-size:  700;
+        font-size: 00.9rem.9rem;
+        letter-sp;
+        letter-spacing: 0acing: 0.08.08em;
+        textem;
+        text-transform: uppercase-transform: uppercase;
+        color: var;
+        color: var(--accent(--accent);
+        margin-bottom:);
+        margin-bottom: 18 18px;
+     px;
+      }
+
+      /* elegant channel indicator }
+
+      /* elegant channel indicator */
+      article h3 */
+      article h3::before {
+       ::before {
+        content content: '●: '●';
+       ';
+        color: color: var(--accent var(--accent2);
+        margin2);
+        margin-right:-right: 10 10px;
+        fontpx;
+        font-size-size: 0: 0.6rem.6rem;
+        vertical;
+        vertical-align:-align: middle;
+      middle;
+      }
+      article#2 }
+      article#2 h3::before h3::before { color: var { color: var(--accent3(--accent3); }
+
+     ); }
+
+      /* /* BUTTONS – BUTTONS – CHIC & CHIC PROF & PROFESSIONAL */
+      .black-buttonESSIONAL */
+      .black-button {
+        display: inline {
+        display: inline-flex;
+        align-flex;
+        align-items: center-items: center;
+        justify-content:;
+        justify-content: center;
+ center;
+        gap        gap: 8px: 8px;
+        width:;
+        width: 100 100%;
+        padding: 15px 24%;
+        padding: 15px 24px;
+px;
+        border        border-radius: -radius: 60px;
+       60px;
+        font-family: 'DM Sans font-family: 'DM Sans', sans', sans-serif;
+        font-weight:-serif;
+        font-weight: 600 600;
+        font-size;
+        font-size: 0.: 0.9rem;
+       9rem;
+        cursor: pointer cursor: pointer;
+        transition: all;
+        transition: all 0.2s ease;
+        0.2s ease;
+        margin-bottom:  margin-bottom: 12px;
+       12px;
+        border: none border: none;
+        letter;
+        letter-spacing: -spacing: 0.010.01em;
+      }
+
+     em;
+      }
+
+      #toggleButton #toggleButton {
+        background: {
+        background: linear-gradient(105deg, linear-gradient(105deg, var(-- var(--accent) accent) 0%, #20%, #2AA8C78C7A 100%);
+       A 100% color: white;
+        box);
+        color: white;
+        box-shadow: 0-shadow: 0 8px 20 8px px rgba(20px rgba(30,127,110,030,127,110,0.2);
+      }
+     .2);
+      }
+      # #toggleButton:hovertoggleButton:hover {
+        transform: {
+        transform: translateY(- translateY(-22px);
+        boxpx);
+        box-shadow: 0-shadow: 0 12px 28px rgba( 12px 30,127,28px rgba(110,0.30,127,110,0.3);
+        filter3);
+        filter: brightness(1.02);
+: brightness(1.02);
+      }
+
+      #call      }
+
+      #callButton {
+        backgroundButton {
+        background: white: white;
+       ;
+        border border: 1.: 1.5px solid var(--ac5px solid var(--accent2);
+        color:cent2);
+        color: var var(--accent);
+        box-shadow: none(--accent);
+        box-shadow: none;
+      }
+     ;
+      }
+      #callButton:hover #callButton:hover {
+        background: {
+        background: rgba(30, rgba(30,127,110,127,110,0.040.04);
+        border-color);
+        border-color: var(--ac: var(--accent);
+        transformcent);
+        transform: translateY(-: translateY(-22px);
+     px);
+      }
+
+      #incomingCallButton }
+
+      #incomingCallButton {
+        background: var(--surface {
+        background: var2);
+        border: (--surface2);
+        border: 11px solid var(--border);
+       px solid var(--border);
+        color: var(-- color: var(--text);
+      }
+      #intext);
+      }
+      #incomingCallButton:hovercomingCallButton:hover {
+        background: {
+        background: white;
+        border-color: var(-- white;
+        border-color: var(--accent3accent3);
+        color: var(--ac);
+        color: var(--accentcent);
+        transform: translate);
+        transform: translateY(-1pxY(-1px);
+        box-shadow: var);
+        box-shadow: var(--shadow(--shadow-sm);
+     -sm);
+      }
+
+      /* FORM }
+
+      /* FORM INPUT */
+      INPUT */
+      form form input[type input[type="text"] {
+        width: 100%;
+        background: white;
+        border: 1="text"] {
+        width: 100%;
+        background: white;
+        border: 1px solid var(--borderpx solid var(--border);
+        color: var(--text);
+        color: var(--text);
+        font-family);
+        font-family: 'DM Sans', sans-serif: 'DM Sans', sans;
+        font-size:-serif;
+        font-size: 0.9 0.9rem;
+        padding: 14rem;
+        padding: 14px 18px 18px;
+        borderpx;
+        border-radius: 60px;
+-radius: 60px;
+               outline: none outline: none;
+        transition: all;
+        transition: all 0.2 0.2s;
+        margins;
+        margin-bottom: 16px;
+     -bottom: 16px;
+      }
+      }
+      form input form input[type="text"][type="text"]::placeholder { color::placeholder { color: #: #9aa9aaebebf;f; }
+      form input }
+      form input[type="text"][type="text"]:focus {
+        border-color::focus {
+        border-color: var(--accent var(--accent);
+        box-shadow:);
+        box-shadow: 0 0 0 3 0 0 0 3px rgba(30px rgba(30,127,110,127,110,0.1);
+,0.1);
+           }
+
+      form p }
+
+      form p {
+        text-align: {
+        text-align: center;
+        font center;
+        font-size: 0-size: 0.7rem;
+        color.7: var(--textrem;
+        color: var(--text-muted);
+       -muted);
+        margin: 10 margin: 10px 0px 0;
+        text-transform:;
+        text-transform: uppercase;
+        uppercase;
+        letter letter-spacing: -spacing: 0.08em;
+     0.08em;
+      }
+
+      # }
+
+      #statusMessagestatusMessage {
+        font-size: {
+        font-size: 0.8 0.8rem;
+        colorrem;
+        color: var(--accent: var(--accent);
+        margin-top:);
+        margin-top: 12px;
+        12px;
+        min-height: 22 min-height: 22px;
+        fontpx;
+        font-weight: 500;
+     -weight: 500;
+      }
+
+      #report }
+
+      #report {
+        font-size: {
+        font-size: 0.75rem;
+        color 0.75rem;
+        color: var(--text-muted);
+        margin-top: : var(--text-muted);
+        margin-top: 12px;
+        white-space: pre12px;
+        white-space: pre-wrap;
+        font-wrap;
+        font-family: mon-family: monospace;
+        line-height: 1ospace;
+        line-height: 1.5;
+       .5;
+        background: var(--surface2 background: var(--surface2);
+        padding: );
+        padding: 12px;
+       12px;
+        border-radius: var(--radius-sm border-radius: var(--radius-sm);
+        border);
+        border-left: 3-left: 3px solid var(--accent2px solid var(--accent2);
+      }
+
+      /*);
+      }
+
+      /* FOOTER – FOOTER – MINIMAL */
+      footer MINIMAL */
+      footer {
+        position: {
+        position: relative;
+        z-index: relative;
+        z 1;
+        border-top-index: 1;
+        border-top: 1px: 1px solid var(--border);
+        padding solid var(--border);
+        padding: 28px : 28px 48px;
+       48px;
+        display: flex display: flex;
+       ;
+        align-items: center;
+        align-items: center;
+        justify justify-content: space-between-content: space-between;
+        flex-wrap: wrap;
+;
+        flex-wrap        gap: 12: wrap;
+        gap:px;
+        background 12px;
+        background: rgba(255,255,255: rgba(255,0.7,255,255,0.);
+        backdrop-filter: blur7);
+       (4px backdrop-filter: blur(4px);
+     );
+      }
+
+      footer .footer-brand {
+        }
+
+      footer .footer-brand {
+        font-family: 'Syne', sans-serif;
+        font-family font-weight: 600: 'Syne', sans-serif;
+        font-weight: ;
+        font-size: 0600;
+        font-size: 0.85rem.85rem;
+        color: var;
+        color: var(--text-muted(--text-muted);
+);
+      }
+
+           }
+
+      footer .footer-n footer .footer-note {
+        fontote {
+        font-size: 0-size: 0.72.72rem;
+        color: var(--rem;
+        color: var(--texttext-muted);
+       -muted);
+        opacity: 0 opacity: 0..7;
+      }
+
+     7;
+      }
+
+      /* AN /* ANIMATIONS (IMATIONS (SAME STRUCTSAME STRUCTURE)URE) */
+      @key */
+      @keyframes fadeUp {
+        from { opacityframes fadeUp {
+        from: 0; { opacity: 0; transform: translateY(24 transform: translateYpx); }
+       (24px); }
+ to   { opacity        to   { opacity: 1; transform:: 1; translateY(0); transform: translateY(0); }
+      }
+      @ }
+      }
+      @keykeyframes fadeframes fadeIn {
+        from {In {
+        from { opacity: 0 opacity: 0; }
+       ; }
+        to   { opacity: to   { opacity: 1; 1; }
+      }
+      @ }
+      }
+      @keyframes slidekeyframes slideDownDown {
+        from { {
+        from { opacity: opacity: 0; transform: translate 0; transform: translateY(-16pxY(-16px); }
+        to   { opacity); }
+        to   { opacity:: 1; transform 1; transform:: translateY(0); }
+      translateY(0); }
+      }
+      @key }
+      @keyframes fadeInRight {
+        from {frames fadeInRight {
+ opacity: 0        from { opacity: 0; transform: translate; transform: translateX(20px); }
+       X(20px); to   { opacity }
+        to   { opacity: 1; transform: translateX: 1;(0); transform: translateX(0); }
+      }
+      @key }
+      }
+      @keyframes pulseframes pulse {
+        0%,  {
+        0%, 100%100% { opacity { opacity: 1;: 1; transform: scale( transform: scale(11); }
+        50% { opacity: 0.); }
+        50% { opacity: 0.6; transform:6; transform: scale(0. scale(0.9); }
+     9); }
+      }
+      @key }
+      @keyframes scrollDotframes scrollDot {
+         {
+        0%   { top: 0%   { top: 5px; opacity: 1;5px; opacity: 1; }
+        80 }
+        80%%  { top  { top: 16px: 16px; opacity: ; opacity: 0; }
+        0; }
+        100% { top: 5100% { top: 5px; opacity: px; opacity: 0; }
+      }
+0; }
+           @keyframes orbFloat }
+      @keyframes orbFloat {
+        0%, {
+        0%, 100% { 100% { transform: translate(-50%, -50 transform: translate(-50%, -50%) scale(1%) scale(1); }
+        50); }
+        50%       { transform: translate(-50%       { transform: translate(-50%, -50%)%, -50%) scale(1.08); }
+ scale(1.08); }
+           }
+
+      /* L }
+
+      /* LIGHT DECORIGHT DECORATIVE ORBS –ATIVE ORBS – SUB SUBTLETLE BL BLURUR */
+      . */
+      .orb {
+        positionorb {
+        position: fixed;
+        border: fixed;
+        border-radius:-radius: 50%;
+        filter 50%;
+        filter: blur(70: blur(70px);
+        pointer-eventspx);
+        pointer-events: none;
+        z-index: none;
+        z-index: 0: 0;
+        opacity;
+        opacity: 0.5;
+      }
+      .orb-: 0.5;
+      }
+      .orb-1 {
+        width1 {
+        width: 520px;: 520px; height:  height520px;
+        background: rgba(59: 520px;
+        background,159: rgba(59,159,143,143,0.08);
+       ,0.08 top: 15%; left);
+        top: 15%; left: -120: -120px;
+        animationpx;
+        animation: orbFloat : orbFloat 1212s ease-in-outs ease-in-out infinite;
+      infinite;
+      }
+      .orb- }
+      .orb-2 {
+        width2 {
+        width: 460: 460px; height:px; height: 460px 460px;
+        background: rgba;
+        background: rgba(30,127,110,0(30,127.06);
+       ,110,0.06);
+        bottom: 10%; right: - bottom: 10100px;
+       %; right: -100px;
+        animation: orbFloat animation: orbFloat 14 14s ease-in-outs ease-in-out infinite reverse;
+      infinite reverse;
+      }
+
+      /* SC }
+
+      /* SCROLL REVEALROLL REVEAL */
+      .reve */
+      .revealal {
+        opacity {
+        opacity: 0: 0;
+        transform: translate;
+        transform: translateY(32Y(32px);
+px);
+        transition: opacity        transition: opacity 0 0.7s cubic.7s cubic-bezier(-bezier(0.2, 0.9, 0.0.2, 0.93, 1, 0.3, ), transform 0.7s1), transform  cubic-bezier0.7s(0.2 cubic-bezier(0.2, 0., 0.9, 09, 0.3, .3, 1);
+      }
+1);
+      }
+      .reveal      .reveal.visible {
+       .visible {
+        opacity: 1 opacity: 1;
+        transform:;
+        transform: translateY( translateY(00);
+      }
+
+     );
+      }
+
+      /* additional spacing /* additional spacing */
+      .separ */
+      .separator { displayator { display: none;: none; }
+    </style>
+  </head>
+
+ }
+     <body>
+    </style>
+  </head>
+
+  <body>
+    <!-- Soft <!-- Soft floating floating orbs ( orbs (light,light, not not dark dark) -->
+   ) -->
+    <div class="orb <div class="orb orb-1"></ orb-1"></div>
+div>
+    <div class="    <div class="orborb orb-2"></ orb-2"></div>
+
+    <!--div>
+
+    <!-- NAVIG NAVIGATION -->
+   ATION -->
+    <nav>
+      <a class="nav <nav>
+      <a class="nav-brand" href="#-brand" href="#">
+">
+        <span class="dot"></        <span class="dot"></span>
+        Wic Doctor
+     span>
+        Wic Doctor </a>
+     
+      </a>
+      <span class=" <span class="nav-badge">AI Healthcarenav-badge">AI Healthcare Con Concierge</span>
+    </navcierge</span>
+
+    <!-- CON>
+    </navFIG BUTTON (>
+
+    <!-- CONFIG BUTTON (trigger)trigger -->
+    <button id) -->
+="configButton">⚙    <button id="configButton"> Preferences</button>
+
+   ⚙ Preferences <!-- CON</button>
+
+   FIG SIDEBAR -->
+    <!-- CONFIG SIDEB <div class="sidebarAR -->
+   " id="sidebar <div class="sidebar" id="sidebar">
+      <h">
+      <h2>Voice2>Voice Settings Settings</</h2h2>
+      <div class>
+      <div class="dropdown-container="dropdown-container">
+        <label for">
+        <label for="theme="themeSelect">Select Sage's voiceSelect">Select Sage's voice before starting before starting a a conversation</label conversation</label>
+       >
+        <select id="themeSelect <select id="themeSelect" name="theme" name="themeSelectSelect">
+         ">
+          <option value="all <option value="alloy">Alloyoy">Alloy — Warm & Clear — Warm</option>
+          & Clear</option>
+          <option value="ash">Ash — <option value="ash">Ash — Confident & Confident & Cal Calm</optionm</option>
+          <option value>
+          <option value="ballad">="ballBallad — Softad">Ballad — Soft & Re & Reassuring</option>
+          <optionassuring</option>
+          <option value="coral value="coral">Coral —">Coral — Bright & Empathetic</option Bright & Empathetic</option>
+          <option value>
+          <option value="echo">E="echo">Echo — Professional & Neutralcho — Professional & Neutral</option>
+         </option>
+          <option value="sage"> <option value="Sagesage">Sage — Wise — Wise & Gentle & Gentle</option>
+        </select>
+     </option>
+        </select>
+      </div>
+    </div>
+
+ </div>
+    </div>
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+      <   div class="hero-eyebrow">Mult <!-- HERO SECTION -->
+    <section class="hero">
+      <div class="hero-eyebrow">Multilingualilingual · HIP · HIPAA-readyAA-ready · Real · Real-time</-time</div>
+     div>
+      <h1>Meet <h1>Meet <span class=" <span class="gradient-word">gradient-word">Sage</Sage</span>,<span>,<br/>br/>your AI healthcareyour AI healthcare agent</h1>
+ agent</h1>
+      <      <p class="hero-subp class="hero-sub">
+        Sage delivers">
+        Sage delivers intelligent, voice intelligent, voice-first assistance-first assistance for W for Wic Doctor — ic Doctor — 24/7 patient support, natural24/7 patient support, natural conversations, and seamless conversations, and seamless handoffs handoffs across  across 5 languages.
+     5 languages.
+      </p>
+      <div class=" </p>
+      <div classhero-langs="hero-langs">
+        <span class="">
+        <span classlang-chip">🇸🇦="lang-chip">🇸🇦 العربية</span العربية</span>
+        <span class="lang-chip">>
+        <span class🇬🇧="lang-chip">🇬🇧 English</span English</span>
+        <span class>
+        <span class="lang-chip">="lang-chip">🇫🇷🇫🇷 Français</span>
+        <span class=" Français</span>
+        <span class="lang-chip">🇮🇹lang-chip">🇮🇹 Italiano</span Italiano</span>
+        <span>
+        <span class="lang-chip class="lang-chip">🇩">🇩🇪 Deutsch</span🇪 Deutsch</span>
+      </div>
+     >
+      </div>
+      <div class="hero-sc <div class="hero-scroll">
+       roll">
+        <div class="arrow <div class="arrow"></div>
+       "></div>
+        Explore
+      </ Explore
+      </div>
+    </div>
+    </section>
+
+    <!--section>
+
+    <!-- ABOUT + ABOUT + FE FEATURES -->
+   ATURES -->
+    <div class=" <div class="divider"></divdivider"></div>
+    <section>
+    <section class="section reveal class="section reveal">
+      <p">
+      <p class=" class="section-label">The Futuresection-label">The Future of Care of Care</p>
+     </p>
+      <h2 class <h2 class="section="section-title">Voice-title">Voice AI re AI reimaginedimagined for<br/> for<br/>modernmodern healthcare.</ healthcare.</h2h2>
+      <p class=">
+      <p class="section-body">
+       section-body">
+        Sage is Sage is powered by powered by Azure OpenAI's Azure OpenAI's Realtime API — Realtime API — understanding natural understanding natural speech, adapting to speech, adapting to caller caller language, and providing language, and providing accurate accurate answers about answers about Wic Doctor Wic Doctor's services. No's services. No waiting, no complex waiting, no complex menus menus, just efficient, just efficient, compassionate, compassionate support support.
+        <br/><br.
+        <br/><br/>
+        Call from/>
+        Call from your browser or mobile your browser or mobile:: Sage will Sage will identify identify itself as itself as an an AI assistant, maintain full AI assistant, maintain full context, and deliver context, and deliver a a secure, professional secure, professional experience aligned with healthcare standards.
+ experience aligned with healthcare standards      </p>
+
+      <div.
+      </p>
+
+      <div class="features-grid class="features-grid">
+        <div">
+        <div class="feature-card reveal">
+          class="feature-card reveal">
+          <span class="feature <span class="feature-icon">🌿</span>
+         -icon">🌿 <h4></span>
+          <h4>5 Language Flu5 Languageency</h4 Fluency>
+          <p</h4>
+          <p>Automatically detects or>Automatically detects or switches between switches between Arabic, English Arabic, English, French, Italian, German — natural, French, Italian, German — code natural code‑‑switching.</switching.</p>
+        </div>
+       p>
+        </div>
+        <div class="feature <div class="feature-card reveal-card reveal">
+          <span class="feature-icon">⚡</span>
+         ">
+          <span class="feature-icon">⚡</span>
+ <h4>Low          <h4>Low‑Lat‑Latency Voiceency Voice</h4>
+          <p></h4>
+          <p>Azure ReAzure Realtime API delivers nearaltime API delivers near‑instant‑instant responses responses, making conversations, making conversations feel truly feel truly human.</p>
+        </div human.</p>
+        <div class>
+        </div>
+        <div="feature-card reveal class="feature-card reveal">
+          <span class="feature-icon">
+          <span class="feature">📞</-icon">📞</span>
+          <h4span>
+         >Omnich <h4>Omnichannel Reachannel Reach</h4</h4>
+         >
+          <p>Browser‑ <p>Browser‑based Webbased WebRTCRTC or standard or standard phone calls phone calls — Sage is — Sage is always always ready to ready to assist you assist you.</p>
+       .</p>
+        </div>
+        </div>
+        <div class=" <div class="feature-card revealfeature-card reveal">
+          <span class">
+          <span class="feature-icon">="feature-icon">🛡️</🛡️</span>
+         span>
+          <h4>Clinical <h4>Clinical Grade Grade Privacy Privacy</h4</h4>
+          <p>>
+          <p>DesDesigned for confidentialityigned for confidentiality, data, data protection, and transparent protection, and transparent AI disclosure at AI disclosure at every turn.</ every turn.</p>
+        </p>
+        </div>
+     div>
+      </ </div>
+    </div>
+    </section>
+
+   section>
+
+    <!-- <!-- MAIN INTER MAIN INTERACTION CARDSACTION CARDS -->
+    <div -->
+    <div class="divider class="divider"></div>
+   "></div>
+    <div class=" <div class="section-cards-headersection-cards-header section reveal">
+      section reveal">
+      <p class=" <p class="section-labelsection-label">Connect to">Connect to Sage Sage</p>
+      <h</p>
+      <2 class="section-title" styleh2 class="section-title="text-align:center;">" style="text-align:center;">Talk with our AITalk with our assistant</ AI assistant</h2>
+   h2>
+    </div>
+
+    <div class=" </div>
+
+    <div classmain-container">
+     ="main-container">
+      <main class=" <main class="container">
+       container">
+        <article id="1" <article id="1" class class="side-by-side reveal="side-by-side reveal">
+">
+                   < <h3>Browser Call</h3h3>Browser Call</h3>
+          <button id="toggle>
+          <button id="toggleButton" classButton" class="black-button="black">🎙-button">🎙️ Start Conversation</button>
+         ️ Start Conversation</button>
+          < <div id="statusdiv id="statusMessage"></divMessage"></div>
+          <pre id>
+          <pre id="report"></pre="report"></pre>
+       >
+        </article </article>
+        <div>
+        <div class="separ class="separatorator"></div>
+        <article id=""></div>
+        <article id="2" class="2" class="side-by-side revealside-by-side reveal">
+          <h">
+          <h3>3>Phone CallPhone Call</h3</h3>
+          <form on>
+          <form onsubmit="event.preventDefaultsubmit="event.preventDefault();">
+           ();">
+            <input <input type="text type="text" id="ph" id="phonenumber" placeholderonenumber" placeholder="Your phone number (e.g="Your phone number (e.g. +491. +49123456789)" />
+           23456789)" />
+            <button <button id="callButton id="callButton" class="black" class="black-button">📲-button">📲 Receive a call Receive a call from Sage</button>
+            <p>or</ from Sage</button>
+            <p>or</pp>
+            <button id="incoming>
+            <button id="incomingCallButtonCallButton" class="" class="black-button">
+             black-button">
+              📡 Call Sage 📡 Call Sage directly
+              directly
+              < <span id="span id="sourcePhoneNumber"></span>
+            </sourcePhoneNumber"></span>
+            </button>
+          </form>
+         button>
+          </ <div id="statusform>
+          <div id="statusMessagePhoneMessagePhone"></div>
+         "></div>
+          <pre <pre id=" idreportPhone"></pre>
+="reportPhone"></pre        </article>
+      </main>
+        </article>
+    </div>
+      </main>
+    </div>
+
+    <!-- FO>
+
+    <!-- FOOTER -->
+    <footerOTER -->
+   >
+      <span class=" <footer>
+      <span class="footer-brand">Wicfooter-brand">W Doctor · Sageic Doctor · Sage AI Agent</span>
+      AI Agent</span>
+ <span class="footer-note      <span class="">Powered by Azure OpenAIfooter-note">Powered by Azure OpenAI Realtime API · Realtime API · Clinical intelligence Clinical intelligence</span>
+   </span>
+    </footer>
+
+    </footer>
+
+    <!-- original scripts ( <!-- original scripts (preservepreserve functionality) functionality) -->
+    <script -->
+    <script src="/static/app src="/static/app.js"></script>
+   .js"></script>
+    <script <script>
+      document.addEventListener('>
+      document.addEventListener('DOMContentLoaded', function () {
+       DOMContentLoaded', function () {
+        const themeSelect = const themeSelect = document.getElementById('theme document.getElementById('themeSelect');
+        if (themeSelect)Select');
+        if (themeSelect) {
+          themeSelect {
+          themeSelect.addEventListener('change',.addEventListener('change', function () {
+            const selectedVoice function () {
+            const selectedVoice = = theme themeSelectSelect.value;
+            if.value;
+            if (typeof updateVoice (typeof updateVoiceOnServer === 'function') {
+             OnServer === 'function') {
+              updateVoiceOnServer updateVoiceOnServer(selectedVoice);
+            }(selectedVoice);
+            } else else {
+              console.log {
+              console.log('Voice('Voice selection updated: ' selection updated: ' + selectedVoice + selectedVoice);
+            }
+         );
+            }
+          });
+        }
+
+        const });
+        }
+
+        const configButton = document configButton = document.getElementById('configButton');
+       .getElementById('configButton');
+        const sidebar const sidebar = document.getElementById(' = document.getElementById('sidebar');
+
+        ifsidebar');
+
+        if (configButton (configButton && && sidebar) {
+          sidebar) {
+          configButton.addEventListener(' configButton.addEventListener('click', () =>click', () => {
+            const is {
+            const isVisible = sidebar.styleVisible = sidebar.style.display === 'none.display === 'none' || sidebar.style.display' || sidebar.style.display === '';
+            sidebar.style.display = isVisible ? ' === '';
+            sidebar.style.display = isVisible ? 'block' : 'none';
+          });
+       block' : 'none';
+          });
+        }
+
+        // Scroll reveal observer
+        }
+
+        // Scroll reveal observer
+        const revealEls = document.querySelectorAll('.reve const revealEls = document.querySelectorAll('.reveal');
+        const observer = new Intersectional');
+        const observerObserver = new IntersectionObserver((entries) => {
+         ((entries) => {
+          entries.forEach((entry entries.forEach((entry, i) => {
+           , i) => if (entry.isIntersecting {
+            if (entry.isIntersecting) {
+              setTimeout) {
+              setTimeout(() => {
+                entry.target.classList(() => {
+               .add entry.target.classList.add('visible');
+              }, i * 70);
+              observer('visible');
+              }, i * .unobserve(70);
+              observer.unobserve(entry.target);
+           entry.target);
+            }
+          });
+        }, { threshold }
+          });
+       : 0.12 }, { threshold: 0. });
+        revealEl12 });
+        revealEls.forEach(el =>s.forEach(el => observer.observe(el));
+      observer.observe(el));
+      });
+    </script });
+    </script>
+  </body>
+</html>
+>
+  </body>
+</html>
