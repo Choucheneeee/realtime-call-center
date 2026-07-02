@@ -1,195 +1,104 @@
 import aiohttp
 import asyncio
 import json
-from typing import Any, Optional
-from aiohttp import ClientWebSocketResponse, web
-from azure.identity import DefaultAzureCredential, AzureDeveloperCliCredential, get_bearer_token_provider
-from azure.core.credentials import AzureKeyCredential
-from backend.tools.tools import RTToolCall, Tool, ToolResultDirection
-from backend.helpers import transform_acs_to_openai_format, transform_openai_to_acs_format
+import logging
+from backend.tools.doctor_search import doctor_search_tool
+from backend.tools.get_doctor_details import doctor_details_tool
 
-LANGUAGE_VOICE_MAP = {
-    "arabic": "alloy",
-    "english": "alloy",
-    "french": "fable",
-    "italian": "echo",
-    "german": "shimmer",
-}
+logger = logging.getLogger("voicerag")
 
 class RTMiddleTier:
-    endpoint: str
-    deployment: str
-    key: Optional[str] = None
-    selected_voice: str = "alloy"
-
-    tools: dict[str, Tool] = {}
-    model: Optional[str] = None
-    system_message: Optional[str] = None
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-    disable_audio: Optional[bool] = None
-
-    _tools_pending: dict[str, RTToolCall] = {}
-    _token_provider = None
-
-    def __init__(self, endpoint: str, deployment: str, credentials: AzureKeyCredential | AzureDeveloperCliCredential | DefaultAzureCredential):
+    def __init__(self, endpoint, deployment, credentials):
         self.endpoint = endpoint
         self.deployment = deployment
-        if isinstance(credentials, AzureKeyCredential):
-            self.key = credentials.key
-        else:
-            self._token_provider = get_bearer_token_provider(credentials, "https://cognitiveservices.azure.com/.default")
-            self._token_provider()  # Warm up
+        self.credentials = credentials
+        self.tools = {}
+        self.system_message = ""
+        self.search_doctors_tool = doctor_search_tool()
+        self.get_doctor_details_tool = doctor_details_tool()
 
-    def set_voice_by_language(self, language: str):
-        voice = LANGUAGE_VOICE_MAP.get(language.lower(), "alloy")
-        if voice != self.selected_voice:
-            self.selected_voice = voice
-            if hasattr(self, 'target_ws') and self.target_ws and not self.target_ws.closed:
-                update_msg = {"type": "session.update", "session": {"voice": voice}}
-                asyncio.create_task(self.target_ws.send_json(update_msg))
+    def set_voice_by_language(self, language):
+        pass
 
-    def _detect_language_from_text(self, text: str) -> Optional[str]:
-        text_lower = text.lower()
-        for lang in LANGUAGE_VOICE_MAP.keys():
-            if lang in text_lower:
-                return lang
-        return None
-
-    async def _process_message_to_client(self, message: Any, client_ws: web.WebSocketResponse, server_ws: ClientWebSocketResponse, is_acs_audio_stream: bool):
-        if message is not None:
-            match message["type"]:
-                case "session.created":
-                    session = message["session"]
-                    session["instructions"] = ""
-                    session["tools"] = []
-                    session["tool_choice"] = "none"
-                    session["max_response_output_tokens"] = None
-                case "session.updated":
-                    await server_ws.send_json({"type": "response.create"})
-                case "response.output_item.added":
-                    if "item" in message and message["item"]["type"] == "function_call":
-                        message = None
-                case "conversation.item.created":
-                    if "item" in message and message["item"]["type"] == "function_call":
-                        item = message["item"]
-                        if item["call_id"] not in self._tools_pending:
-                            self._tools_pending[item["call_id"]] = RTToolCall(item["call_id"], message["previous_item_id"])
-                        message = None
-                    elif "item" in message and message["item"]["type"] == "function_call_output":
-                        message = None
-                case "response.function_call_arguments.delta":
-                    message = None
-                case "response.function_call_arguments.done":
-                    message = None
-                case "response.output_item.done":
-                    if "item" in message and message["item"]["type"] == "function_call":
-                        item = message["item"]
-                        tool_call = self._tools_pending[message["item"]["call_id"]]
-                        tool = self.tools[item["name"]]
-                        args = item["arguments"]
-                        result = await tool.target(json.loads(args))
-                        await server_ws.send_json({
-                            "type": "conversation.item.create",
-                            "item": {
-                                "type": "function_call_output",
-                                "call_id": item["call_id"],
-                                "output": result.to_text() if result.destination == ToolResultDirection.TO_SERVER else ""
-                            }
-                        })
-                        if result.destination == ToolResultDirection.TO_CLIENT and not is_acs_audio_stream:
-                            await client_ws.send_json({
-                                "type": "extension.middle_tier_tool_response",
-                                "previous_item_id": tool_call.previous_id,
-                                "tool_name": item["name"],
-                                "tool_result": result.to_text()
-                            })
-                        message = None
-                case "response.done":
-                    if len(self._tools_pending) > 0:
-                        self._tools_pending.clear()
-                        await server_ws.send_json({"type": "response.create"})
-                    if "response" in message:
-                        replace = False
-                        outputs = message["response"]["output"]
-                        for output in reversed(outputs):
-                            if output["type"] == "function_call":
-                                outputs.remove(output)
-                                replace = True
-                        if replace:
-                            message = json.loads(json.dumps(message))
-
-        if is_acs_audio_stream and message is not None:
-            message = transform_openai_to_acs_format(message)
-
-        if message is not None:
-            await client_ws.send_str(json.dumps(message))
-
-    async def _process_message_to_server(self, data: Any, ws: web.WebSocketResponse, server_ws: ClientWebSocketResponse, is_acs_audio_stream: bool):
-        if is_acs_audio_stream:
-            data = transform_acs_to_openai_format(data, self.model, self.tools, self.system_message, self.temperature, self.max_tokens, self.disable_audio, self.selected_voice)
-
-        # Language detection and voice update
-        if data is not None and data.get("type") == "conversation.item.create":
-            item = data.get("item", {})
-            if item.get("type") == "message" and item.get("role") == "user":
-                content = item.get("content", [])
-                for part in content:
-                    if part.get("type") == "input_text":
-                        user_text = part.get("text", "")
-                        detected_lang = self._detect_language_from_text(user_text)
-                        if detected_lang:
-                            self.set_voice_by_language(detected_lang)
-                        break
-
-        if data is not None:
-            match data["type"]:
-                case "session.update":
-                    session = data["session"]
-                    session["voice"] = self.selected_voice
-                    if self.system_message is not None:
-                        session["instructions"] = self.system_message
-                    if self.temperature is not None:
-                        session["temperature"] = self.temperature
-                    if self.max_tokens is not None:
-                        session["max_response_output_tokens"] = self.max_tokens
-                    if self.disable_audio is not None:
-                        session["disable_audio"] = self.disable_audio
-                    session["tool_choice"] = "auto" if len(self.tools) > 0 else "none"
-                    session["tools"] = [tool.schema for tool in self.tools.values()]
-                    data["session"] = session
-            await server_ws.send_str(json.dumps(data))
-
-    async def forward_messages(self, ws: web.WebSocketResponse, is_acs_audio_stream: bool):
-        async with aiohttp.ClientSession(base_url=self.endpoint) as session:
-            params = {"api-version": "2024-10-01-preview", "deployment": self.deployment}
-            headers = {}
-            if "x-ms-client-request-id" in ws.headers:
-                headers["x-ms-client-request-id"] = ws.headers["x-ms-client-request-id"]
-            if self.key is not None:
-                headers = {"api-key": self.key}
+    async def forward_messages(self, ws, is_acs_audio_stream):
+        async for msg in ws:
+            if msg.type == aiohttp.WSMsgType.TEXT:
+                data = json.loads(msg.data)
+                # Intercept user messages
+                if data.get("type") == "conversation.item.create":
+                    item = data.get("item", {})
+                    if item.get("type") == "message" and item.get("role") == "user":
+                        for part in item.get("content", []):
+                            if part.get("type") == "input_text":
+                                user_text = part.get("text", "")
+                                # Process the user text to detect intents
+                                await self._process_user_text(ws, user_text)
+                                continue
+                # Forward other messages to the realtime API (if needed)
+                # For simplicity, we just handle the user messages ourselves.
             else:
-                if self._token_provider is not None:
-                    headers = {"Authorization": f"Bearer {self._token_provider()}"}
+                print(f"Unhandled message type: {msg.type}")
+
+    async def _process_user_text(self, ws, user_text):
+        """Detect intent and call appropriate tool."""
+        user_lower = user_text.lower()
+        # 1. Check if user is asking for doctor details (contains "details", "plus d'infos", etc.)
+        if any(kw in user_lower for kw in ["détail", "plus d'info", "en savoir", "details", "infos"]):
+            # Try to extract the doctor ID from the conversation context? 
+            # For simplicity, we'll ask the user for the ID or name.
+            # In this version, we assume the user mentions the doctor name, so we'll search first.
+            # Actually, to get details, we need the aleatoire ID. We can search first, then ask.
+            # Better to ask the user for the name.
+            # But we can also search for the name and then call details on the first result.
+            # Let's implement a simple flow: search by name, then auto-detail.
+            # For now, we'll just reply asking for the doctor's full name.
+            reply = "Pour obtenir plus de détails, veuillez me donner le nom complet du médecin (ex: Dr GHARNATEI Saad)."
+            await self._send_text_message(ws, reply)
+            return
+
+        # 2. Check if user is asking to find a doctor
+        doctor_keywords = ["médecin", "doctor", "cherche", "trouve", "généraliste", "cardiologue", "dentiste", "pédiatre", "ophtalmologue", "dermatologue", "psychiatre"]
+        if any(kw in user_lower for kw in doctor_keywords) or "dr" in user_lower:
+            # Extract search term (try to get the full name after "Dr" or "docteur")
+            import re
+            # Look for "Dr [Name]" or "docteur [Name]" or just the name if it looks like a name
+            name_match = re.search(r'(?:Dr|docteur|doctor)\s+([A-Za-z\s]+)', user_text, re.I)
+            if name_match:
+                search_term = name_match.group(1).strip()
+            else:
+                # If no "Dr", use the whole text as query (but limit to first few words)
+                words = user_text.split()
+                # If the text has fewer than 5 words, use all; else take first 5
+                if len(words) <= 5:
+                    search_term = user_text.strip()
                 else:
-                    raise ValueError("No token provider available")
-            async with session.ws_connect("/openai/realtime", headers=headers, params=params) as target_ws:
-                self.target_ws = target_ws
-                async def from_client_to_server():
-                    async for msg in ws:
-                        if msg.type == aiohttp.WSMsgType.TEXT:
-                            data = json.loads(msg.data)
-                            await self._process_message_to_server(data, ws, target_ws, is_acs_audio_stream)
-                        else:
-                            print("Error: unexpected message type:", msg.type)
-                async def from_server_to_client():
-                    async for msg in target_ws:
-                        if msg.type == aiohttp.WSMsgType.TEXT:
-                            data = json.loads(msg.data)
-                            await self._process_message_to_client(data, ws, target_ws, is_acs_audio_stream)
-                        else:
-                            print("Error: unexpected message type:", msg.type)
-                try:
-                    await asyncio.gather(from_client_to_server(), from_server_to_client())
-                except ConnectionResetError:
-                    pass
+                    search_term = " ".join(words[:5])
+            # Call the search tool
+            result = await self.search_doctors_tool.target({"search": search_term})
+            reply = result.text
+            # Send the result
+            await self._send_text_message(ws, reply)
+            return
+
+        # 3. If no intent matched, just forward the message to the LLM? 
+        # But we are not actually forwarding to the LLM because we are handling everything here.
+        # We can either echo or ask for clarification.
+        await self._send_text_message(ws, "Je suis désolé, je n'ai pas compris. Pouvez-vous reformuler ? Par exemple, 'Je cherche un cardiologue' ou 'Dr GHARNATEI Saad'.")
+
+    async def _send_text_message(self, ws, text):
+        """Send a text message back to the client."""
+        # Create a conversation item with the assistant's text
+        message = {
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "output_text",
+                        "text": text
+                    }
+                ]
+            }
+        }
+        await ws.send_json(message)

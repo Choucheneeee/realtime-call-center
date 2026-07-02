@@ -12,6 +12,8 @@ from backend.rtmt import RTMiddleTier
 from backend.acs import AcsCaller
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents.aio import SearchClient
+from backend.tools.get_doctor_details import doctor_details_tool
+from backend.tools.doctor_search import doctor_search_tool
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("voicerag")
@@ -84,6 +86,9 @@ async def create_app():
     if search_client is not None and search_semantic_configuration is not None:
         rtmt.tools["search"] = search_tool(search_client, search_semantic_configuration)
         rtmt.tools["report_grounding"] = report_grounding_tool(search_client)
+    	rtmt.tools["get_doctor_details"] = doctor_details_tool()
+	rtmt.tools["search_doctors"] = doctor_search_tool()
+	print(f"Registered tools: {list(rtmt.tools.keys())}")
 
     # Define the WebSocket handler for the Web Frontend
     async def websocket_handler(request: web.Request):
@@ -116,12 +121,12 @@ async def create_app():
 
     async def call(request):
         body = await request.json()
-	
+    
         phone_number = body.get('phoneNumber') or body.get('number')
-    	if not phone_number:
-        	return web.json_response({"error": "Missing phoneNumber"}, status=400)
-    	await caller.initiate_call(phone_number)
-    	return web.json_response({"message": "Call initiated"})
+        if not phone_number:
+            return web.json_response({"error": "Missing phoneNumber"}, status=400)
+        await caller.initiate_call(phone_number)
+        return web.json_response({"message": "Call initiated"})
     async def get_source_phone_number(request):
         phone_number = os.environ.get("ACS_SOURCE_NUMBER")
         return web.json_response({"phoneNumber": phone_number})
